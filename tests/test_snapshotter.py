@@ -153,3 +153,126 @@ def test_unexpected_fetch_error_wrapped(fake_client, settings):
 
     with pytest.raises(FetchFailed):
         InstagramClient(settings).fetch_following()
+
+
+from tracker.models import Event, Person, Snapshot, SnapshotEntry, SnapshotStatus
+from tracker.snapshotter.service import fetch_with_client, run_snapshot
+
+
+class FakeFetcherClient:
+    def __init__(self, followers=None, following=None, error=None):
+        self.followers = followers or {}
+        self.following = following or {}
+        self.error = error
+
+    def fetch_followers(self):
+        return self.followers
+
+    def fetch_following(self):
+        if self.error is not None:
+            raise self.error
+        return self.following
+
+
+def rec(user_id, name):
+    return UserRecord(user_id, name)
+
+
+def test_first_snapshot_is_baseline(session):
+    now = datetime(2026, 9, 11, 12, 0)
+    client = FakeFetcherClient({1: rec(1, "alice")}, {2: rec(2, "bob")})
+
+    result = run_snapshot(session, lambda: fetch_with_client(client), now=now)
+
+    assert result.status == SnapshotStatus.ok
+    assert result.follower_count == 1
+    assert result.following_count == 1
+    assert session.query(Event).count() == 0
+    assert session.get(Person, 1).is_follower is True
+    assert session.get(Person, 1).is_following is False
+    assert session.get(Person, 2).is_following is True
+
+
+def test_second_snapshot_creates_events_and_notifies(session):
+    t1 = datetime(2026, 9, 11, 12, 0)
+    t2 = datetime(2026, 9, 12, 12, 0)
+    run_snapshot(
+        session,
+        lambda: fetch_with_client(
+            FakeFetcherClient(
+                {1: rec(1, "alice"), 2: rec(2, "bob")},
+                {3: rec(3, "carol")},
+            )
+        ),
+        now=t1,
+    )
+    captured: list[Event] = []
+
+    run_snapshot(
+        session,
+        lambda: fetch_with_client(
+            FakeFetcherClient(
+                {2: rec(2, "bob"), 4: rec(4, "dave")},
+                {3: rec(3, "carol"), 5: rec(5, "erin")},
+            )
+        ),
+        notify=captured.extend,
+        now=t2,
+    )
+
+    assert sorted((event.type.value, event.username) for event in captured) == [
+        ("i_followed", "erin"),
+        ("new_follower", "dave"),
+        ("unfollowed", "alice"),
+    ]
+    assert session.get(Person, 1).is_follower is False
+    assert session.get(Person, 1).last_changed_at == t2
+    assert session.get(Person, 4).is_follower is True
+
+
+def test_failed_snapshot_is_persisted_and_reraised(session):
+    client = FakeFetcherClient(error=FetchFailed("boom"))
+
+    with pytest.raises(FetchFailed):
+        run_snapshot(session, lambda: fetch_with_client(client))
+
+    snapshot = session.query(Snapshot).one()
+    assert snapshot.status == SnapshotStatus.failed
+    assert snapshot.error == "boom"
+    assert session.query(SnapshotEntry).count() == 0
+
+
+def test_partial_fetch_discards_both_lists(session):
+    client = FakeFetcherClient(
+        followers={1: rec(1, "alice")},
+        error=FetchFailed("following failed"),
+    )
+
+    with pytest.raises(FetchFailed):
+        run_snapshot(session, lambda: fetch_with_client(client))
+
+    assert session.query(SnapshotEntry).count() == 0
+    snapshot = session.query(Snapshot).one()
+    assert snapshot.status == SnapshotStatus.failed
+
+
+def test_notifier_failure_does_not_fail_snapshot(session):
+    t1 = datetime(2026, 9, 11, 12, 0)
+    t2 = datetime(2026, 9, 12, 12, 0)
+    run_snapshot(
+        session,
+        lambda: fetch_with_client(FakeFetcherClient({1: rec(1, "alice")}, {})),
+        now=t1,
+    )
+
+    def broken_notifier(events):
+        raise RuntimeError("telegram down")
+
+    result = run_snapshot(
+        session,
+        lambda: fetch_with_client(FakeFetcherClient({}, {})),
+        notify=broken_notifier,
+        now=t2,
+    )
+
+    assert result.status == SnapshotStatus.ok
