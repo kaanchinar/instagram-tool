@@ -1,17 +1,43 @@
-<table class="events">
-  <thead><tr><th>When</th><th>User</th><th>Event</th></tr></thead>
-  <tbody>
-  {% for row in rows %}
-    <tr class="{% if row.whitelisted %}whitelisted{% endif %}">
-      <td>{{ row.event.detected_at }}</td>
-      <td>
-        <a href="/people/{{ row.event.ig_user_id }}">@{{ row.event.username }}</a>
-        {% if row.whitelisted %}<span class="tag">whitelisted</span>{% endif %}
-      </td>
-      <td>{{ row.event.type.value }}</td>
-    </tr>
-  {% else %}
-    <tr><td colspan="3">No events.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+<div class="table-container">
+  <table class="events">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Event</th>
+        <th>When</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+      <tr class="user-row {% if row.whitelisted %}whitelisted{% endif %}">
+        <td>
+          <div class="user-meta-cell">
+            <div class="user-mini-avatar">
+              {{ (row.event.username[0] if row.event.username else 'U') | upper }}
+            </div>
+            <div class="user-info-text">
+              <a href="/people/{{ row.event.ig_user_id }}" class="user-handle-link">@{{ row.event.username }}</a>
+              {% if row.whitelisted %}<span class="tag">whitelisted</span>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="event-badge event-badge-{{ row.event.type.value }}">
+            {% if row.event.type.value == 'new_follower' %}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            {% elif row.event.type.value == 'unfollowed' %}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            {% endif %}
+            {{ row.event.type.value }}
+          </span>
+        </td>
+        <td style="color: var(--text-secondary); font-size: 0.8rem;">
+          {{ row.event.detected_at }}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="empty-state">No events.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>

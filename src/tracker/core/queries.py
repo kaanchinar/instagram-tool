@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from tracker.models import Event, EventType, Person, Snapshot, SnapshotStatus
@@ -11,6 +11,24 @@ from tracker.models import Event, EventType, Person, Snapshot, SnapshotStatus
 class EventWithWhitelist:
     event: Event
     whitelisted: bool
+
+
+def followers(session: Session) -> list[Person]:
+    stmt = (
+        select(Person)
+        .where(Person.is_follower.is_(True))
+        .order_by(Person.username)
+    )
+    return list(session.scalars(stmt))
+
+
+def following(session: Session) -> list[Person]:
+    stmt = (
+        select(Person)
+        .where(Person.is_following.is_(True))
+        .order_by(Person.username)
+    )
+    return list(session.scalars(stmt))
 
 
 def not_following_back(session: Session) -> list[Person]:
@@ -29,6 +47,47 @@ def fans(session: Session) -> list[Person]:
         .order_by(Person.username)
     )
     return list(session.scalars(stmt))
+
+
+def list_counts(session: Session) -> dict[str, int]:
+    followers_c = (
+        session.scalar(
+            select(func.count(Person.ig_user_id)).where(
+                Person.is_follower.is_(True)
+            )
+        )
+        or 0
+    )
+    following_c = (
+        session.scalar(
+            select(func.count(Person.ig_user_id)).where(
+                Person.is_following.is_(True)
+            )
+        )
+        or 0
+    )
+    not_back_c = (
+        session.scalar(
+            select(func.count(Person.ig_user_id)).where(
+                Person.is_following.is_(True), Person.is_follower.is_(False)
+            )
+        )
+        or 0
+    )
+    fans_c = (
+        session.scalar(
+            select(func.count(Person.ig_user_id)).where(
+                Person.is_follower.is_(True), Person.is_following.is_(False)
+            )
+        )
+        or 0
+    )
+    return {
+        "followers": followers_c,
+        "following": following_c,
+        "not_following_back": not_back_c,
+        "fans": fans_c,
+    }
 
 
 def user_history(session: Session, ig_user_id: int) -> list[Event]:

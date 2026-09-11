@@ -31,6 +31,30 @@ def add_event(session, user_id, name, event_type, when=WHEN, snapshot_id=1):
     return event
 
 
+def test_followers(session):
+    add_person(session, 1, "alice", True, True)
+    add_person(session, 2, "bob", False, True)
+    add_person(session, 3, "carol", True, False)
+    session.commit()
+
+    assert [person.username for person in queries.followers(session)] == [
+        "alice",
+        "carol",
+    ]
+
+
+def test_following(session):
+    add_person(session, 1, "alice", True, True)
+    add_person(session, 2, "bob", False, True)
+    add_person(session, 3, "carol", True, False)
+    session.commit()
+
+    assert [person.username for person in queries.following(session)] == [
+        "alice",
+        "bob",
+    ]
+
+
 def test_not_following_back(session):
     add_person(session, 1, "alice", True, True)
     add_person(session, 2, "bob", False, True)
@@ -47,6 +71,21 @@ def test_fans(session):
     session.commit()
 
     assert [person.username for person in queries.fans(session)] == ["carol"]
+
+
+def test_list_counts(session):
+    add_person(session, 1, "alice", True, True)
+    add_person(session, 2, "bob", False, True)
+    add_person(session, 3, "carol", True, False)
+    session.commit()
+
+    counts = queries.list_counts(session)
+    assert counts == {
+        "followers": 2,
+        "following": 2,
+        "not_following_back": 1,
+        "fans": 1,
+    }
 
 
 def test_user_history_newest_first(session):

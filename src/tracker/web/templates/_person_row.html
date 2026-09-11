@@ -1,10 +1,44 @@
-<tr id="person-{{ person.ig_user_id }}">
-  <td><a href="/people/{{ person.ig_user_id }}">@{{ person.username }}</a></td>
-  <td>{{ person.full_name or "" }}</td>
-  <td>{{ "yes" if person.whitelisted else "no" }}</td>
+<tr id="person-{{ person.ig_user_id }}" class="user-row {% if person.whitelisted %}whitelisted{% endif %}">
   <td>
-    <form hx-post="/people/{{ person.ig_user_id }}/whitelist" hx-target="closest tr" hx-swap="outerHTML">
-      <button type="submit">{{ "Un-whitelist" if person.whitelisted else "Whitelist" }}</button>
-    </form>
+    <div class="user-meta-cell">
+      <div class="user-mini-avatar">
+        {{ (person.username[0] if person.username else 'U') | upper }}
+      </div>
+      <div class="user-info-text">
+        <a href="/people/{{ person.ig_user_id }}" class="user-handle-link">@{{ person.username }}</a>
+        {% if person.full_name %}
+        <span class="user-fullname-sub">{{ person.full_name }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </td>
+  <td>{{ person.full_name or "" }}</td>
+  <td>
+    <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+      {% if person.is_follower and person.is_following %}
+        <span class="badge badge-mutual">Mutual</span>
+      {% elif person.is_follower %}
+        <span class="badge badge-fan">Follows you</span>
+      {% elif person.is_following %}
+        <span class="badge badge-not-back">Doesn't follow</span>
+      {% endif %}
+      <span class="badge {% if person.whitelisted %}badge-whitelisted{% else %}badge-neutral{% endif %}">
+        Whitelist: {{ "yes" if person.whitelisted else "no" }}
+      </span>
+    </div>
+  </td>
+  <td>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <form hx-post="/people/{{ person.ig_user_id }}/whitelist" hx-target="closest tr" hx-swap="outerHTML">
+        <button type="submit" class="btn btn-whitelist {% if person.whitelisted %}is-whitelisted{% endif %}">{{ "Un-whitelist" if person.whitelisted else "Whitelist" }}</button>
+      </form>
+      <a href="https://www.instagram.com/{{ person.username }}/" target="_blank" rel="noopener noreferrer" class="btn btn-icon" title="Open Instagram profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
+    </div>
   </td>
 </tr>

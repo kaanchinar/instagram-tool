@@ -33,11 +33,17 @@ def _worker_health() -> dict | None:
         return None
 
 
-def _base_context(request: Request, **extra) -> dict:
+def _base_context(
+    request: Request, session: Session | None = None, **extra
+) -> dict:
+    settings = get_settings()
+    nav_counts = queries.list_counts(session) if session else {}
     context = {
         "request": request,
         "worker": _worker_health(),
         "event_types": list(EventType),
+        "ig_username": settings.ig_username,
+        "nav_counts": nav_counts,
     }
     context.update(extra)
     return context
@@ -50,8 +56,10 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
         "dashboard.html",
         _base_context(
             request,
+            session=session,
             counts=queries.latest_ok_snapshot(session),
             rows=queries.recent_events(session, limit=10),
+            active_tab="dashboard",
         ),
     )
 
@@ -73,9 +81,11 @@ def events(
     )
     context = _base_context(
         request,
+        session=session,
         rows=rows,
         active_type=event_type,
         hide_whitelisted=hide_whitelisted,
+        active_tab="events",
     )
     template = (
         "_events_table.html"
@@ -85,7 +95,40 @@ def events(
     return templates.TemplateResponse(request, template, context)
 
 
+@router.get("/lists/followers", response_class=HTMLResponse)
+@router.get("/followers", response_class=HTMLResponse)
+def list_followers(request: Request, session: Session = Depends(get_session)):
+    return templates.TemplateResponse(
+        request,
+        "list.html",
+        _base_context(
+            request,
+            session=session,
+            title="Followers",
+            active_tab="followers",
+            people=queries.followers(session),
+        ),
+    )
+
+
+@router.get("/lists/following", response_class=HTMLResponse)
+@router.get("/following", response_class=HTMLResponse)
+def list_following(request: Request, session: Session = Depends(get_session)):
+    return templates.TemplateResponse(
+        request,
+        "list.html",
+        _base_context(
+            request,
+            session=session,
+            title="Following",
+            active_tab="following",
+            people=queries.following(session),
+        ),
+    )
+
+
 @router.get("/lists/not-following-back", response_class=HTMLResponse)
+@router.get("/not-following-back", response_class=HTMLResponse)
 def list_not_following_back(
     request: Request, session: Session = Depends(get_session)
 ):
@@ -94,20 +137,25 @@ def list_not_following_back(
         "list.html",
         _base_context(
             request,
+            session=session,
             title="Not following back",
+            active_tab="not_following_back",
             people=queries.not_following_back(session),
         ),
     )
 
 
 @router.get("/lists/fans", response_class=HTMLResponse)
+@router.get("/fans", response_class=HTMLResponse)
 def list_fans(request: Request, session: Session = Depends(get_session)):
     return templates.TemplateResponse(
         request,
         "list.html",
         _base_context(
             request,
+            session=session,
             title="Fans",
+            active_tab="fans",
             people=queries.fans(session),
         ),
     )
@@ -125,8 +173,10 @@ def person_page(
         "person.html",
         _base_context(
             request,
+            session=session,
             person=person,
             history=queries.user_history(session, ig_user_id),
+            active_tab="people",
         ),
     )
 

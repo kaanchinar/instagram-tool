@@ -1,28 +1,97 @@
 {% extends "base.html" %}
 {% block title %}@{{ person.username }} — Instagram Tracker{% endblock %}
 {% block content %}
-<h2>@{{ person.username }}</h2>
-<p>{{ person.full_name or "" }}</p>
-<table class="people">
-  <thead><tr><th>Username</th><th>Name</th><th>Whitelisted</th><th></th></tr></thead>
-  <tbody id="person-row">
-    {% include "_person_row.html" %}
-  </tbody>
-</table>
-<p>
-  Follower: {{ "yes" if person.is_follower else "no" }} ·
-  Following: {{ "yes" if person.is_following else "no" }} ·
-  First seen: {{ person.first_seen_at }}
-</p>
-<h3>History</h3>
-<table class="events">
-  <thead><tr><th>When</th><th>Event</th></tr></thead>
-  <tbody>
-  {% for event in history %}
-    <tr><td>{{ event.detected_at }}</td><td>{{ event.type.value }}</td></tr>
-  {% else %}
-    <tr><td colspan="2">No events.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+<section class="profile-card">
+  <div class="profile-header-row">
+    <div class="profile-avatar-story-ring" style="width: 74px; height: 74px;">
+      <div class="profile-avatar-inner">
+        <div class="avatar-circle" style="font-size: 1.5rem;">
+          {{ (person.username[0] if person.username else 'U') | upper }}
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-info">
+      <div class="profile-username-row">
+        <h1 class="profile-username">@{{ person.username }}</h1>
+        {% if person.whitelisted %}
+        <span class="badge badge-whitelisted">Whitelisted</span>
+        {% endif %}
+        <a href="https://www.instagram.com/{{ person.username }}/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-icon" title="View profile on Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+      <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 0.4rem;">
+        {{ person.full_name or "No name provided" }}
+      </p>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-secondary);">
+        <span>Follower: <strong>{{ "yes" if person.is_follower else "no" }}</strong></span> ·
+        <span>Following: <strong>{{ "yes" if person.is_following else "no" }}</strong></span> ·
+        <span>First seen: <strong>{{ person.first_seen_at }}</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="people">
+      <thead>
+        <tr>
+          <th>Account</th>
+          <th>Full Name</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="person-row">
+        {% include "_person_row.html" %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section-card">
+  <div class="section-header">
+    <div class="section-title-group">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 14 14"></polyline>
+      </svg>
+      <div>
+        <h2 class="section-title">History</h2>
+        <span class="section-subtitle">All tracked interactions and status transitions for @{{ person.username }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="events">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Detected At</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for event in history %}
+        <tr class="user-row">
+          <td>
+            <span class="event-badge event-badge-{{ event.type.value }}">
+              {{ event.type.value }}
+            </span>
+          </td>
+          <td style="color: var(--text-secondary); font-size: 0.825rem;">
+            {{ event.detected_at }}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="2" class="empty-state">No events.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

@@ -1,15 +1,118 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} — Instagram Tracker{% endblock %}
 {% block content %}
-<h2>{{ title }}</h2>
-<table class="people">
-  <thead><tr><th>Username</th><th>Name</th><th>Whitelisted</th><th></th></tr></thead>
-  <tbody>
-  {% for person in people %}
-    {% include "_person_row.html" %}
-  {% else %}
-    <tr><td colspan="4">Nobody here.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+<section class="section-card">
+  <div class="section-header">
+    <div class="section-title-group">
+      {% if active_tab == 'followers' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      {% elif active_tab == 'following' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="8.5" cy="7" r="4"></circle>
+        <line x1="20" y1="8" x2="20" y2="14"></line>
+        <line x1="23" y1="11" x2="17" y2="11"></line>
+      </svg>
+      {% elif active_tab == 'not_following_back' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+      </svg>
+      {% elif active_tab == 'fans' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+      {% endif %}
+      <div>
+        <h1 class="section-title">{{ title }}</h1>
+        <span class="section-subtitle">
+          {% if active_tab == 'followers' %}
+            Accounts currently following you on Instagram
+          {% elif active_tab == 'following' %}
+            Accounts you currently follow on Instagram
+          {% elif active_tab == 'not_following_back' %}
+            Accounts you follow, but they do not follow you back
+          {% elif active_tab == 'fans' %}
+            Accounts that follow you, but you do not follow back
+          {% else %}
+            Instagram accounts list
+          {% endif %}
+        </span>
+      </div>
+    </div>
+    <span class="tab-count" style="font-size: 0.85rem; padding: 0.3rem 0.75rem;">
+      {{ people|length }} {{ "account" if people|length == 1 else "accounts" }}
+    </span>
+  </div>
+
+  <div class="toolbar-row">
+    <div class="search-input-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="search"
+        class="search-input"
+        id="people-search"
+        placeholder="Search {{ title | lower }} by @username or name..."
+        oninput="filterPeopleList(this.value)"
+        autocomplete="off"
+      />
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="people">
+      <thead>
+        <tr>
+          <th>Account</th>
+          <th>Full Name</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for person in people %}
+        {% include "_person_row.html" %}
+      {% else %}
+        <tr><td colspan="4" class="empty-state">Nobody here.</td></tr>
+      {% endfor %}
+        <tr id="empty-search-row" style="display: none;">
+          <td colspan="4" class="empty-state">
+            <h3>No accounts found</h3>
+            <p>No results matching your search term.</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+function filterPeopleList(term) {
+  const query = term.toLowerCase().trim();
+  const rows = document.querySelectorAll('.people tbody tr.user-row');
+  let matchCount = 0;
+
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    if (!query || text.includes(query)) {
+      row.style.display = '';
+      matchCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+
+  const emptyRow = document.getElementById('empty-search-row');
+  if (emptyRow) {
+    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+  }
+}
+</script>
 {% endblock %}

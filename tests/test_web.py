@@ -183,6 +183,20 @@ def test_lists_pages(client, session):
     assert "@bob" in not_back.text
     assert "@alice" not in not_back.text
 
+    followers = client.get("/lists/followers")
+    assert "@alice" in followers.text
+    assert "@bob" not in followers.text
+
+    following = client.get("/lists/following")
+    assert "@bob" in following.text
+    assert "@alice" not in following.text
+
+    followers_alias = client.get("/followers")
+    assert "@alice" in followers_alias.text
+
+    following_alias = client.get("/following")
+    assert "@bob" in following_alias.text
+
 
 def test_whitelist_toggle(client, session):
     seed_person(session, 1, "alice")
