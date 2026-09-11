@@ -1,0 +1,33 @@
+[project]
+name = "instagram-tracker"
+version = "0.1.0"
+description = "Self-hosted Instagram unfollower tracker"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14",
+    "apscheduler>=3.10,<4",
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "instagrapi>=2.0",
+    "jinja2>=3.1",
+    "psycopg[binary]>=3.2",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0",
+    "uvicorn[standard]>=0.32",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tracker"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
