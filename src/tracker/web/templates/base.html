@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Instagram Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <h1><a href="/">Instagram Tracker</a></h1>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/events">Events</a>
+      <a href="/lists/not-following-back">Not following back</a>
+      <a href="/lists/fans">Fans</a>
+    </nav>
+    {% include "_banner.html" %}
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

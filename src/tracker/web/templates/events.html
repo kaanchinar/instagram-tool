@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Events — Instagram Tracker{% endblock %}
+{% block content %}
+<h2>Events</h2>
+<nav class="filters">
+  <a hx-get="/events" hx-target="#events-table" hx-push-url="true" class="{% if not active_type %}active{% endif %}">All</a>
+  {% for event_type in event_types %}
+    <a hx-get="/events?type={{ event_type.value }}" hx-target="#events-table" hx-push-url="true" class="{% if active_type == event_type %}active{% endif %}">{{ event_type.value }}</a>
+  {% endfor %}
+  {% if hide_whitelisted %}
+    <a hx-get="/events" hx-target="#events-table" hx-push-url="true">Show whitelisted</a>
+  {% else %}
+    <a hx-get="/events?hide_whitelisted=1" hx-target="#events-table" hx-push-url="true">Hide whitelisted</a>
+  {% endif %}
+</nav>
+<div id="events-table">
+  {% include "_events_table.html" %}
+</div>
+{% endblock %}

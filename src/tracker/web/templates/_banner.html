@@ -1,0 +1,13 @@
+<div id="status-banner" class="banner {% if not worker %}banner-error{% elif worker.paused %}banner-warn{% elif worker.running %}banner-info{% else %}banner-ok{% endif %}">
+  {% if not worker %}
+    Worker unreachable — dashboard data comes from the database.
+  {% elif worker.paused %}
+    Worker paused — re-run the login command and restart the worker.
+  {% elif worker.running %}
+    Snapshot in progress…
+  {% elif worker.last_snapshot %}
+    Last snapshot: {{ worker.last_snapshot.taken_at }} — {{ worker.last_snapshot.status }}
+  {% else %}
+    No snapshots yet.
+  {% endif %}
+</div>

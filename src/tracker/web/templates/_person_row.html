@@ -1,0 +1,10 @@
+<tr id="person-{{ person.ig_user_id }}">
+  <td><a href="/people/{{ person.ig_user_id }}">@{{ person.username }}</a></td>
+  <td>{{ person.full_name or "" }}</td>
+  <td>{{ "yes" if person.whitelisted else "no" }}</td>
+  <td>
+    <form hx-post="/people/{{ person.ig_user_id }}/whitelist" hx-target="closest tr" hx-swap="outerHTML">
+      <button type="submit">{{ "Un-whitelist" if person.whitelisted else "Whitelist" }}</button>
+    </form>
+  </td>
+</tr>

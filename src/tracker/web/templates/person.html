@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}@{{ person.username }} — Instagram Tracker{% endblock %}
+{% block content %}
+<h2>@{{ person.username }}</h2>
+<p>{{ person.full_name or "" }}</p>
+<table class="people">
+  <thead><tr><th>Username</th><th>Name</th><th>Whitelisted</th><th></th></tr></thead>
+  <tbody id="person-row">
+    {% include "_person_row.html" %}
+  </tbody>
+</table>
+<p>
+  Follower: {{ "yes" if person.is_follower else "no" }} ·
+  Following: {{ "yes" if person.is_following else "no" }} ·
+  First seen: {{ person.first_seen_at }}
+</p>
+<h3>History</h3>
+<table class="events">
+  <thead><tr><th>When</th><th>Event</th></tr></thead>
+  <tbody>
+  {% for event in history %}
+    <tr><td>{{ event.detected_at }}</td><td>{{ event.type.value }}</td></tr>
+  {% else %}
+    <tr><td colspan="2">No events.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

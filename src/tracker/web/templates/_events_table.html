@@ -1,0 +1,17 @@
+<table class="events">
+  <thead><tr><th>When</th><th>User</th><th>Event</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr class="{% if row.whitelisted %}whitelisted{% endif %}">
+      <td>{{ row.event.detected_at }}</td>
+      <td>
+        <a href="/people/{{ row.event.ig_user_id }}">@{{ row.event.username }}</a>
+        {% if row.whitelisted %}<span class="tag">whitelisted</span>{% endif %}
+      </td>
+      <td>{{ row.event.type.value }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="3">No events.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>

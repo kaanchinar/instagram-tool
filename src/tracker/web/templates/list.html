@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Instagram Tracker{% endblock %}
+{% block content %}
+<h2>{{ title }}</h2>
+<table class="people">
+  <thead><tr><th>Username</th><th>Name</th><th>Whitelisted</th><th></th></tr></thead>
+  <tbody>
+  {% for person in people %}
+    {% include "_person_row.html" %}
+  {% else %}
+    <tr><td colspan="4">Nobody here.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

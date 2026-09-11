@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Instagram Tracker{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<section class="cards">
+  <div class="card"><h2>Followers</h2><p>{{ counts.follower_count if counts else "—" }}</p></div>
+  <div class="card"><h2>Following</h2><p>{{ counts.following_count if counts else "—" }}</p></div>
+</section>
+<section>
+  <h2>Growth</h2>
+  <canvas id="growth-chart" height="120"></canvas>
+</section>
+<section>
+  <h2>Recent events
+    <form class="inline" hx-post="/refresh" hx-target="#refresh-result" hx-swap="innerHTML">
+      <button type="submit">Refresh now</button>
+    </form>
+  </h2>
+  <div id="refresh-result"></div>
+  {% include "_events_table.html" %}
+</section>
+<script>
+fetch("/api/stats/counts")
+  .then((response) => response.json())
+  .then((series) => {
+    new Chart(document.getElementById("growth-chart"), {
+      type: "line",
+      data: {
+        labels: series.map((point) => point.taken_at),
+        datasets: [
+          { label: "Followers", data: series.map((point) => point.followers), borderColor: "#2563eb", tension: 0.2 },
+          { label: "Following", data: series.map((point) => point.following), borderColor: "#d97706", tension: 0.2 },
+        ],
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: false } } },
+    });
+  });
+</script>
+{% endblock %}
