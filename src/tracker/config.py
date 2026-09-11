@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     ig_username: str = ""
     ig_password: str = ""
+    ig_sessionid: str = ""
     ig_session_path: Path = Path("/data/session.json")
     database_url: str = "postgresql+psycopg://tracker:tracker@db:5432/tracker"
     poll_interval_hours: float = 6.0

@@ -1,6 +1,7 @@
 import argparse
 import getpass
 import logging
+from urllib.parse import unquote
 
 from instagrapi import Client
 from instagrapi.exceptions import ChallengeRequired, TwoFactorRequired
@@ -37,6 +38,42 @@ def login() -> None:
     print(f"Session saved to {session_path}")
 
 
+def _sessionid_variants(sessionid: str) -> list[str]:
+    variants = [sessionid]
+    decoded = unquote(sessionid)
+    if decoded != sessionid:
+        variants.append(decoded)
+    return variants
+
+
+def login_sessionid() -> None:
+    settings = get_settings()
+    raw = settings.ig_sessionid or getpass.getpass("Instagram sessionid: ")
+    sessionid = raw.strip().strip('"').strip("'")
+    errors: list[str] = []
+    for candidate in _sessionid_variants(sessionid):
+        client = Client()
+        client.delay_range = [2, 6]
+        try:
+            client.login_by_sessionid(candidate)
+        except Exception as exc:
+            errors.append(f"{type(exc).__name__}: {exc}")
+            continue
+        session_path = settings.ig_session_path
+        session_path.parent.mkdir(parents=True, exist_ok=True)
+        client.dump_settings(session_path)
+        print(f"Session saved to {session_path} (logged in as @{client.username})")
+        return
+    print("Instagram rejected the sessionid for the private mobile API.")
+    for error in errors:
+        print(f"  {error}")
+    print(
+        "Get a fresh sessionid from a browser login, or wait and use the "
+        "password `login` command once Instagram stops rejecting logins."
+    )
+    raise SystemExit(1)
+
+
 def snapshot() -> None:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level.upper())
@@ -58,10 +95,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="tracker")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("login", help="Interactively create an Instagram session file")
+    subparsers.add_parser(
+        "login-sessionid",
+        help="Create a session file from a browser sessionid cookie",
+    )
     subparsers.add_parser("snapshot", help="Run a single snapshot now")
     args = parser.parse_args()
     if args.command == "login":
         login()
+    elif args.command == "login-sessionid":
+        login_sessionid()
     else:
         snapshot()
 

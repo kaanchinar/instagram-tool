@@ -83,6 +83,24 @@ Whitelisted users never appear in alerts.
 - **Banner says "Worker paused"** (checkpoint / 2FA / bad password):
   re-run `docker compose run --rm worker python -m tracker.worker.cli login`,
   then `docker compose restart worker`.
+- **Password login blocked with "Your version of Instagram is out of date"**:
+  this is an intermittent anti-automation response from Instagram (it is not
+  caused by your account or credentials). Log in to <https://www.instagram.com>
+  in a browser, copy the `sessionid` cookie value (DevTools → Application →
+  Cookies → `https://www.instagram.com`; use the value exactly as shown,
+  URL-encoded), then run:
+
+  ```bash
+  docker compose run --rm worker python -m tracker.worker.cli login-sessionid
+  ```
+
+  Paste the value at the prompt. To avoid interactive entry, pass the value
+  as an env var instead: `docker compose run --rm -e IG_SESSIONID="$SID" worker
+  python -m tracker.worker.cli login-sessionid`. The command tries the value
+  as pasted and then URL-decoded, and saves the same session file the worker
+  uses. Caveat: Instagram sometimes rejects browser sessions for the mobile
+  API (`login_required`); if both forms fail, wait and retry the password
+  `login` command instead.
 - **Rate limited**: the worker backs off automatically (doubling up to 24 h).
 - **Session expired**: the worker logs back in with `IG_USERNAME`/`IG_PASSWORD`
   automatically; you only get an alert if that also fails.
