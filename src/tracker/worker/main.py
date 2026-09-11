@@ -164,11 +164,12 @@ def _start_scheduler() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    run_migrations()
     logging.basicConfig(
         level=settings.log_level.upper(),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        force=True,
     )
-    run_migrations()
     init_db()
     _start_scheduler()
     try:
