@@ -94,7 +94,9 @@ async def _execute_snapshot() -> None:
     except Exception:
         logger.exception("unexpected snapshot error")
     else:
-        state.rate_limit_failures = 0
+        if state.rate_limit_failures:
+            state.rate_limit_failures = 0
+            _restore_interval()
     finally:
         state.running = False
 
@@ -113,6 +115,24 @@ def _reschedule(delay_seconds: float) -> None:
         trigger=IntervalTrigger(
             hours=delay_seconds / 3600.0,
             jitter=jitter,
+        )
+    )
+
+
+def _restore_interval() -> None:
+    if state.scheduler is None:
+        return
+    job = state.scheduler.get_job("snapshot")
+    if job is None:
+        return
+    settings = get_settings()
+    job.reschedule(
+        trigger=IntervalTrigger(
+            hours=settings.poll_interval_hours,
+            jitter=min(
+                int(settings.snapshot_jitter_minutes * 60),
+                int(settings.poll_interval_hours * 3600 / 2),
+            ),
         )
     )
 
