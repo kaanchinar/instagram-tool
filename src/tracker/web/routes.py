@@ -29,7 +29,7 @@ def _worker_health() -> dict | None:
         )
         response.raise_for_status()
         return response.json()
-    except httpx.HTTPError:
+    except (httpx.HTTPError, httpx.InvalidURL, ValueError):
         return None
 
 

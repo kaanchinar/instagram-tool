@@ -104,6 +104,44 @@ def test_dashboard_shows_paused_banner(client, session, monkeypatch):
     assert "Worker paused" in response.text
 
 
+def test_dashboard_failed_snapshot_shows_error_banner(client, session, monkeypatch):
+    monkeypatch.setattr(
+        routes,
+        "_worker_health",
+        lambda: {
+            "paused": False,
+            "running": False,
+            "last_snapshot": {"taken_at": WHEN.isoformat(), "status": "failed"},
+        },
+    )
+
+    response = client.get("/")
+
+    assert "banner-error" in response.text
+
+
+class TestWorkerHealth:
+    @pytest.fixture()
+    def stub_worker_health(self):
+        yield
+
+    def test_returns_none_on_invalid_json(self, monkeypatch):
+        def fake_get(url, timeout=None):
+            return httpx.Response(
+                200, content=b"not json", request=httpx.Request("GET", url)
+            )
+
+        monkeypatch.setattr(routes.httpx, "get", fake_get)
+
+        assert routes._worker_health() is None
+
+    def test_returns_none_on_invalid_url(self, monkeypatch):
+        monkeypatch.setenv("WORKER_INTERNAL_URL", "http://foo:bar")
+        get_settings.cache_clear()
+
+        assert routes._worker_health() is None
+
+
 def test_events_filter_by_type(client, session):
     seed_event(session, 1, "alice", EventType.unfollowed)
     seed_event(session, 2, "bob", EventType.new_follower)

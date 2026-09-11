@@ -1,4 +1,4 @@
-<div id="status-banner" class="banner {% if not worker %}banner-error{% elif worker.paused %}banner-warn{% elif worker.running %}banner-info{% else %}banner-ok{% endif %}">
+<div id="status-banner" class="banner {% if not worker %}banner-error{% elif worker.paused %}banner-warn{% elif worker.running %}banner-info{% elif worker.last_snapshot and worker.last_snapshot.status == 'failed' %}banner-error{% else %}banner-ok{% endif %}">
   {% if not worker %}
     Worker unreachable — dashboard data comes from the database.
   {% elif worker.paused %}

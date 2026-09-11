@@ -43,6 +43,7 @@ class WorkerState:
 
 
 state = WorkerState()
+_background_tasks: set[asyncio.Task] = set()
 
 
 def _initial_next_run(has_snapshots: bool) -> datetime | None:
@@ -187,7 +188,9 @@ app = FastAPI(title="Instagram Tracker Worker", lifespan=lifespan)
 async def trigger_snapshot() -> dict[str, str]:
     if state.running:
         raise HTTPException(status_code=409, detail="snapshot already running")
-    asyncio.get_running_loop().create_task(_execute_snapshot())
+    task = asyncio.get_running_loop().create_task(_execute_snapshot())
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return {"status": "triggered"}
 
 

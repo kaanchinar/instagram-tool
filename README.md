@@ -88,7 +88,7 @@ Whitelisted users never appear in alerts.
   automatically; you only get an alert if that also fails.
 - **Worker down**: the dashboard still loads; lists and history come from the
   database.
-- **Telegraph/delivery failures**: logged and ignored; snapshots still succeed.
+- **Telegram/delivery failures**: logged and ignored; snapshots still succeed.
 
 ## Development
 
@@ -115,5 +115,7 @@ in-memory SQLite database.
   worker.
 - `web` publishes only `127.0.0.1:8000`. There is no authentication — do not
   bind it to a LAN/public interface as-is.
-- All data lives in the local `pgdata` volume. Outbound calls go only to
-  Instagram and (optionally) the Telegram Bot API.
+- All data lives in the local `pgdata` volume. Server-side outbound calls go
+  only to Instagram and (optionally) the Telegram Bot API. Dashboard pages
+  load Chart.js from the jsDelivr CDN, so your browser also contacts
+  `cdn.jsdelivr.net`; no user data is sent there.

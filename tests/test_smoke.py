@@ -5,7 +5,7 @@ from tracker.db import make_engine
 
 
 def test_settings_defaults():
-    settings = Settings(_env_file=None)
+    settings = Settings(_env_file=None, _env_prefix="IGTRACKER_TEST_")
     assert settings.poll_interval_hours == 6.0
     assert settings.database_url.startswith("postgresql+psycopg")
     assert settings.worker_internal_url == "http://worker:9000"

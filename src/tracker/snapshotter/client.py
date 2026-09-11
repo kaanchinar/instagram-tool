@@ -3,6 +3,7 @@ from instagrapi.exceptions import (
     BadCredentials,
     BadPassword,
     ChallengeRequired as InstagramChallengeRequired,
+    ClientLoginRequired,
     ClientThrottledError,
     LoginRequired,
     PleaseWaitFewMinutes,
@@ -17,6 +18,7 @@ from tracker.snapshotter.errors import (
     FetchFailed,
     LoginFailed,
     RateLimited,
+    SnapshotError,
 )
 
 RATE_LIMIT_ERRORS = (PleaseWaitFewMinutes, RateLimitError, ClientThrottledError)
@@ -53,26 +55,38 @@ class InstagramClient:
     def connect(self) -> None:
         if self._client is not None:
             return
-        client = Client()
-        client.delay_range = [2, 6]
         session_path = self.settings.ig_session_path
         if session_path.exists():
+            client = self._new_client()
             try:
                 client.load_settings(session_path)
-                client.account_info()
-                self._client = client
-                return
             except Exception:
-                client = Client()
-                client.delay_range = [2, 6]
+                pass
+            else:
+                try:
+                    client.account_info()
+                except (LoginRequired, ClientLoginRequired):
+                    pass
+                except Exception as exc:
+                    raise _wrap_error(exc) from exc
+                else:
+                    self._client = client
+                    return
+        client = self._new_client()
         try:
             client.login(self.settings.ig_username, self.settings.ig_password)
             client.account_info()
+            session_path.parent.mkdir(parents=True, exist_ok=True)
+            client.dump_settings(session_path)
         except Exception as exc:
             raise _wrap_error(exc) from exc
-        session_path.parent.mkdir(parents=True, exist_ok=True)
-        client.dump_settings(session_path)
         self._client = client
+
+    @staticmethod
+    def _new_client() -> Client:
+        client = Client()
+        client.delay_range = [2, 6]
+        return client
 
     def _own_id(self) -> int:
         self.connect()
@@ -88,9 +102,11 @@ class InstagramClient:
         self.connect()
         try:
             users = getattr(self._client, method)(self._own_id(), use_cache=False)
+            return _to_records(users)
+        except SnapshotError:
+            raise
         except Exception as exc:
             raise _wrap_error(exc) from exc
-        return _to_records(users)
 
     def fetch_followers(self) -> dict[int, UserRecord]:
         return self._fetch("user_followers")

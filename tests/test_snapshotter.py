@@ -112,6 +112,42 @@ def test_expired_session_falls_back_to_password_login(fake_client, settings):
     assert fake_client.dumped_to == settings.ig_session_path
 
 
+def test_transient_session_error_does_not_trigger_password_login(fake_client, settings):
+    settings.ig_session_path.write_text("{}")
+
+    def account_info():
+        raise PleaseWaitFewMinutes("slow down")
+
+    fake_client.account_info = account_info
+
+    with pytest.raises(RateLimited):
+        InstagramClient(settings).connect()
+
+    assert fake_client.logged_in_with is None
+
+
+def test_session_dump_failure_wrapped(fake_client, settings):
+    def boom(path):
+        raise OSError("disk full")
+
+    fake_client.dump_settings = boom
+
+    with pytest.raises(FetchFailed):
+        InstagramClient(settings).connect()
+
+    assert fake_client.logged_in_with == ("me", "secret")
+
+
+def test_own_id_error_not_rewrapped_as_fetch_failed(fake_client, settings):
+    def boom(username):
+        raise InstagramChallengeRequired()
+
+    fake_client.user_info_by_username = boom
+
+    with pytest.raises(ChallengeRequired):
+        InstagramClient(settings).fetch_followers()
+
+
 def test_invalid_credentials_wrapped(fake_client, settings, monkeypatch):
     def boom(username, password):
         raise BadPassword("bad password")

@@ -78,6 +78,20 @@ def test_trigger_returns_409_when_running():
         worker.state.running = False
 
 
+def test_trigger_retains_task_reference(monkeypatch):
+    async def noop():
+        return None
+
+    monkeypatch.setattr(worker, "_execute_snapshot", noop)
+    worker.state.running = False
+
+    async def scenario():
+        await worker.trigger_snapshot()
+        assert len(worker._background_tasks) == 1
+
+    asyncio.run(scenario())
+
+
 def test_rate_limited_increments_and_reschedules_with_backoff(worker_state, monkeypatch):
     def fail():
         raise RateLimited("slow down")
